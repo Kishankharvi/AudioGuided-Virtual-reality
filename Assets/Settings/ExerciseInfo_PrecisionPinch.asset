@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43aa86c2654f7ef41a0185885a2a6462, type: 3}
+  m_Name: ExerciseInfo_PrecisionPinch
+  m_EditorClassIdentifier: 
+  _displayName: Precision Pinching
+  _description: Pinch your index finger and thumb together firmly (85%+ strength)
+    and hold the pinch steady for 1.5 seconds. Releasing early counts as a failed
+    attempt. This trains precise grip control needed for writing and handling small
+    objects.
+  _techniqueTips: "- Pinch with the pads of your fingertips\n- Keep your hand steady,
+    avoid wrist movement\n- Focus on consistent pressure, not maximum force\n- Both
+    hands are tracked \u2014 use whichever is stronger"
+  _illustration: {fileID: 21300000, guid: f5870a91fbeec824baab3f48a1460d8c, type: 3}
+  _accentColor: {r: 0.88, g: 0.55, b: 0.25, a: 1}
+  _targetReps: 10
+  _difficulty: Hard

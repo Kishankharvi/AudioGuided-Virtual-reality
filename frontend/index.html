@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGVR Rehab Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0c10;
+            --bg-secondary: #12151c;
+            --bg-card: #181c26;
+            --bg-card-hover: #1e2330;
+            --accent-green: #33bf58;
+            --accent-blue: #4090e0;
+            --accent-gold: #f0c830;
+            --accent-red: #e04040;
+            --text-primary: #f0f0f5;
+            --text-secondary: #8a8d98;
+            --text-muted: #555860;
+            --border: #252830;
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .header h1 span { color: var(--accent-green); }
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        .refresh-btn {
+            background: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 8px 20px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            transition: opacity 0.2s;
+        }
+        .refresh-btn:hover { opacity: 0.85; }
+
+        /* ── Layout ── */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* ── Stat Cards ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+        .stat-card.green::before { background: var(--accent-green); }
+        .stat-card.blue::before { background: var(--accent-blue); }
+        .stat-card.gold::before { background: var(--accent-gold); }
+        .stat-card.red::before { background: var(--accent-red); }
+
+        .stat-card .label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .stat-card .unit {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+        .stat-card .change {
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        .stat-card .change.positive { color: var(--accent-green); }
+        .stat-card .change.negative { color: var(--accent-red); }
+        .stat-card .change.neutral { color: var(--text-muted); }
+
+        /* ── Charts ── */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 900px) {
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+        .chart-card h3 {
+            font-size: 13px;
+            color: var(--text-secondary);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+        .chart-card canvas {
+            width: 100% !important;
+            max-height: 280px;
+        }
+
+        /* ── Session Table ── */
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .table-card h3 {
+            font-size: 13px;
+            color: var(--text-secondary);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        tr:hover td { background: var(--bg-card-hover); }
+        tr:last-child td { border-bottom: none; }
+
+        .accuracy-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .accuracy-badge.high { background: rgba(51,191,88,0.15); color: var(--accent-green); }
+        .accuracy-badge.mid { background: rgba(240,200,48,0.15); color: var(--accent-gold); }
+        .accuracy-badge.low { background: rgba(224,64,64,0.15); color: var(--accent-red); }
+
+        /* ── Session Detail Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+        .modal .close-btn {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .modal .close-btn:hover { color: var(--text-primary); }
+        .modal canvas { max-height: 250px; }
+
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .exercise-item {
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+        }
+        .exercise-item .name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .exercise-item .meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1><span>AGVR</span> Rehab Dashboard</h1>
+            <div class="subtitle">Hand Rehabilitation Session Analytics</div>
+        </div>
+        <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    </div>
+
+    <div class="container">
+        <!-- Stat Cards -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="loading">Loading stats...</div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Accuracy Trend</h3>
+                <canvas id="accuracyChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Grip Strength Trend</h3>
+                <canvas id="gripChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Session Table -->
+        <div class="table-card">
+            <h3>Session History</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Patient</th>
+                        <th>Duration</th>
+                        <th>Accuracy</th>
+                        <th>Grip</th>
+                        <th>Exercises</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="sessionTable">
+                    <tr><td colspan="7" class="loading">Loading sessions...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal" id="modalContent">
+            <button class="close-btn" onclick="document.getElementById('modalOverlay').classList.remove('active')">✕</button>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const API = window.location.port === '' || window.location.pathname.startsWith('/static')
+            ? '' : 'http://localhost:8000';
+
+        let accuracyChart = null;
+        let gripChart = null;
+
+        // ── Load Everything ──
+        async function loadAll() {
+            await Promise.all([loadStats(), loadImprovement(), loadSessions()]);
+        }
+
+        // ── Stats ──
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API}/api/stats`);
+                const data = await res.json();
+                const grid = document.getElementById('statsGrid');
+
+                const fmtTime = (s) => {
+                    const m = Math.floor(s / 60);
+                    return m < 60 ? `${m}m` : `${Math.floor(m/60)}h ${m%60}m`;
+                };
+
+                grid.innerHTML = `
+                    <div class="stat-card blue">
+                        <div class="label">Total Sessions</div>
+                        <div class="value">${data.totalSessions}</div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="label">Avg Accuracy</div>
+                        <div class="value">${data.avgAccuracy.toFixed(1)}<span class="unit">%</span></div>
+                        <div class="change ${data.latestImprovement > 0 ? 'positive' : data.latestImprovement < 0 ? 'negative' : 'neutral'}">
+                            ${data.latestImprovement > 0 ? '▲' : data.latestImprovement < 0 ? '▼' : '●'}
+                            ${Math.abs(data.latestImprovement).toFixed(1)}% vs last
+                        </div>
+                    </div>
+                    <div class="stat-card gold">
+                        <div class="label">Avg Grip Strength</div>
+                        <div class="value">${data.avgGrip.toFixed(1)}<span class="unit">%</span></div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="label">Best Accuracy</div>
+                        <div class="value">${data.bestAccuracy.toFixed(1)}<span class="unit">%</span></div>
+                    </div>
+                    <div class="stat-card blue">
+                        <div class="label">Total Training Time</div>
+                        <div class="value">${fmtTime(data.totalTime)}</div>
+                    </div>
+                `;
+            } catch (e) {
+                document.getElementById('statsGrid').innerHTML =
+                    '<div class="loading">Failed to load stats. Is the server running?</div>';
+            }
+        }
+
+        // ── Improvement Charts ──
+        async function loadImprovement() {
+            try {
+                const res = await fetch(`${API}/api/improvement`);
+                const data = await res.json();
+
+                const chartOpts = (label, color, data, labels) => ({
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: label,
+                            data: data,
+                            borderColor: color,
+                            backgroundColor: color + '20',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: color,
+                            borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#181c26',
+                                titleColor: '#f0f0f5',
+                                bodyColor: '#8a8d98',
+                                borderColor: '#252830',
+                                borderWidth: 1,
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: '#252830' },
+                                ticks: { color: '#555860', font: { size: 11 } }
+                            },
+                            y: {
+                                grid: { color: '#252830' },
+                                ticks: { color: '#555860', font: { size: 11 } },
+                                beginAtZero: true,
+                                max: 100,
+                            }
+                        }
+                    }
+                });
+
+                if (accuracyChart) accuracyChart.destroy();
+                if (gripChart) gripChart.destroy();
+
+                accuracyChart = new Chart(
+                    document.getElementById('accuracyChart'),
+                    chartOpts('Accuracy %', '#33bf58', data.accuracies, data.dates)
+                );
+
+                gripChart = new Chart(
+                    document.getElementById('gripChart'),
+                    chartOpts('Grip Strength %', '#f0c830', data.gripStrengths, data.dates)
+                );
+            } catch (e) {
+                console.error('Failed to load improvement data:', e);
+            }
+        }
+
+        // ── Sessions Table ──
+        async function loadSessions() {
+            try {
+                const res = await fetch(`${API}/api/sessions`);
+                const sessions = await res.json();
+                const tbody = document.getElementById('sessionTable');
+
+                if (sessions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="loading">No sessions yet</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = sessions.map(s => {
+                    const mins = Math.floor(s.totalDuration / 60);
+                    const secs = Math.floor(s.totalDuration % 60);
+                    const accClass = s.overallAccuracy >= 80 ? 'high' :
+                                     s.overallAccuracy >= 50 ? 'mid' : 'low';
+                    return `
+                        <tr>
+                            <td>${s.date}</td>
+                            <td>${s.patientId}</td>
+                            <td>${mins}:${String(secs).padStart(2,'0')}</td>
+                            <td><span class="accuracy-badge ${accClass}">${s.overallAccuracy.toFixed(1)}%</span></td>
+                            <td>${s.averageGripStrength.toFixed(1)}%</td>
+                            <td>${s.exerciseCount}</td>
+                            <td><button class="refresh-btn" style="padding:4px 12px;font-size:11px"
+                                onclick="showDetail('${s.sessionId}')">View</button></td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                document.getElementById('sessionTable').innerHTML =
+                    '<tr><td colspan="7" class="loading">Failed to load sessions</td></tr>';
+            }
+        }
+
+        // ── Session Detail Modal ──
+        async function showDetail(sessionId) {
+            const overlay = document.getElementById('modalOverlay');
+            const body = document.getElementById('modalBody');
+            overlay.classList.add('active');
+            body.innerHTML = '<div class="loading">Loading...</div>';
+
+            try {
+                const res = await fetch(`${API}/api/session/${sessionId}`);
+                const data = await res.json();
+
+                const mins = Math.floor(data.totalDuration / 60);
+                const secs = Math.floor(data.totalDuration % 60);
+
+                body.innerHTML = `
+                    <h2>Session ${data.sessionId}</h2>
+                    <p style="color:var(--text-secondary);margin-bottom:16px">
+                        ${data.startTimestamp || 'Unknown date'} · Patient: ${data.patientId || 'Unknown'}
+                        · Duration: ${mins}:${String(secs).padStart(2,'0')}
+                    </p>
+                    <div style="margin-bottom:16px">
+                        <canvas id="detailChart" height="200"></canvas>
+                    </div>
+                    <h3 style="font-size:13px;color:var(--text-secondary);letter-spacing:1.5px;margin-bottom:12px">
+                        EXERCISE DETAILS
+                    </h3>
+                    <div class="exercise-grid">
+                        ${data.exercises.map(ex => `
+                            <div class="exercise-item">
+                                <div class="name">${ex.exerciseName}</div>
+                                <div class="meta">
+                                    Accuracy: <strong>${ex.accuracy.toFixed(1)}%</strong> ·
+                                    Reps: ${ex.repsCompleted}/${ex.targetReps} ·
+                                    Grip: ${ex.gripStrength.toFixed(1)}%
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                // Bar chart for this session's exercises
+                new Chart(document.getElementById('detailChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: data.exercises.map(e => e.exerciseName),
+                        datasets: [
+                            {
+                                label: 'Accuracy %',
+                                data: data.exercises.map(e => e.accuracy),
+                                backgroundColor: '#33bf5880',
+                                borderColor: '#33bf58',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                            },
+                            {
+                                label: 'Grip %',
+                                data: data.exercises.map(e => e.gripStrength),
+                                backgroundColor: '#f0c83080',
+                                borderColor: '#f0c830',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#8a8d98', font: { size: 11 } }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: '#252830' },
+                                ticks: { color: '#555860', font: { size: 10 } }
+                            },
+                            y: {
+                                grid: { color: '#252830' },
+                                ticks: { color: '#555860' },
+                                beginAtZero: true,
+                                max: 100,
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                body.innerHTML = '<div class="loading">Failed to load session details</div>';
+            }
+        }
+
+        function closeModal(event) {
+            if (event.target === document.getElementById('modalOverlay')) {
+                document.getElementById('modalOverlay').classList.remove('active');
+            }
+        }
+
+        // ── Init ──
+        loadAll();
+        setInterval(loadAll, 30000); // Auto-refresh every 30s
+    </script>
+</body>
+</html>

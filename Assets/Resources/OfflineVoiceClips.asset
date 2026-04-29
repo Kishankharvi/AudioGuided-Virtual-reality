@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fd0abf136358b247bfa8041d77712d0, type: 3}
+  m_Name: OfflineVoiceClips
+  m_EditorClassIdentifier: 
+  welcome: {fileID: 8300000, guid: d8de574e4037a794f87e974ca3edc529, type: 3}
+  calibrationStart: {fileID: 8300000, guid: 9bea79a21b760af41828a37411a1df11, type: 3}
+  calibrationProgress: {fileID: 8300000, guid: dff6cae878ef261439786edccf6d7493, type: 3}
+  calibrationComplete: {fileID: 8300000, guid: f5937a886c431424f88a18a9d21a5b1d, type: 3}
+  introGripHold: {fileID: 8300000, guid: 3b1579a8ba3a0434680777c52a8024b9, type: 3}
+  introPrecisionPinch: {fileID: 8300000, guid: 013288c14f3127e49a5b905bf251818d, type: 3}
+  introFingerSpreading: {fileID: 8300000, guid: 089e44248b268c1489a9eb9e614b836a, type: 3}
+  introFingerTapping: {fileID: 8300000, guid: 5159a547c68e13d44916f7ec3c797658, type: 3}
+  introThumbOpposition: {fileID: 8300000, guid: f0b19a635bdbada4789256469ffdaa46, type: 3}
+  completionOutstanding: {fileID: 8300000, guid: d8b79bc41d8d0e6489f2dc367c724075, type: 3}
+  completionWellDone: {fileID: 8300000, guid: e50eac4aa1e5ce3498019ed42843831d, type: 3}
+  completionGoodEffort: {fileID: 8300000, guid: cbf64b84834bb3448aed8efaff93a6d2, type: 3}
+  sessionComplete: {fileID: 8300000, guid: 09a6720dd931954409d2acbe8db2ec8f, type: 3}
+  milestone: {fileID: 8300000, guid: 8d9ef2e6b9c872f43bfb67e46a378560, type: 3}
+  trackingLost: {fileID: 8300000, guid: a1baec75ca11d9a46aa62668aa0d08e4, type: 3}
+  trackingRestored: {fileID: 8300000, guid: fcf986989cde849439c5dfc1e3e0e14d, type: 3}
+  encourageHigh: {fileID: 8300000, guid: 08eaf5fea3bc7d44fb522f740ec4b71a, type: 3}
+  encourageMid: {fileID: 8300000, guid: 9a6582bf2111cd147a8f66e1ea8f59e8, type: 3}
+  encourageLow: {fileID: 8300000, guid: 1c469f7fe4b020f47b0de729053effe6, type: 3}

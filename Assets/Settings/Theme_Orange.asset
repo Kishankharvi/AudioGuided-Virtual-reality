@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77fc2857f4c35004b9bbfa1d1217a802, type: 3}
+  m_Name: Theme_Orange
+  m_EditorClassIdentifier: 
+  _themeName: Sunset
+  _accentPrimary: {r: 0.9, g: 0.55, b: 0.2, a: 1}
+  _panelBackground: {r: 0.18, g: 0.1, b: 0.06, a: 0.82}
+  _panelBorder: {r: 0.48, g: 0.3, b: 0.15, a: 0.55}
+  _innerPanel: {r: 0.14, g: 0.08, b: 0.04, a: 0.75}
+  _titleColor: {r: 0.98, g: 0.92, b: 0.85, a: 1}
+  _labelColor: {r: 0.82, g: 0.6, b: 0.38, a: 1}
+  _valueColor: {r: 0.98, g: 0.94, b: 0.88, a: 1}
+  _buttonNormal: {r: 0.7, g: 0.38, b: 0.12, a: 1}
+  _buttonHighlight: {r: 0.8, g: 0.45, b: 0.15, a: 1}
+  _buttonPressed: {r: 0.58, g: 0.3, b: 0.1, a: 1}
+  _buttonText: {r: 1, g: 0.96, b: 0.9, a: 1}
+  _gradientTopLeft: {r: 0.98, g: 0.92, b: 0.82, a: 1}
+  _gradientTopRight: {r: 0.95, g: 0.85, b: 0.72, a: 1}
+  _gradientBottomLeft: {r: 0.88, g: 0.58, b: 0.3, a: 1}
+  _gradientBottomRight: {r: 0.8, g: 0.48, b: 0.22, a: 1}

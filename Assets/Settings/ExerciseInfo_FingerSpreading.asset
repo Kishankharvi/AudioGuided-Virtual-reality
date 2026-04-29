@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43aa86c2654f7ef41a0185885a2a6462, type: 3}
+  m_Name: ExerciseInfo_FingerSpreading
+  m_EditorClassIdentifier: 
+  _displayName: Finger Spreading
+  _description: "Spread all fingers wide apart on both hands simultaneously, achieving
+    at least 35\xB0 between each adjacent pair. Hold the spread position for 2 seconds.
+    This exercise improves finger independence and bilateral symmetry."
+  _techniqueTips: "- Extend both hands in front of you, palms forward\n- Spread fingers
+    as wide as possible\n- Keep both hands symmetrical for a higher score\n- Hold
+    the position steady \u2014 don't bounce"
+  _illustration: {fileID: 21300000, guid: c545a10bd70985047827ed015997c236, type: 3}
+  _accentColor: {r: 0.7, g: 0.4, b: 0.85, a: 1}
+  _targetReps: 8
+  _difficulty: Moderate
