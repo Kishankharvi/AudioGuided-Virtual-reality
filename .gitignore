@@ -10,7 +10,39 @@ MemoryCaptures/
 .DS_Store
 Thumbs.db
 
+
+.vscode/
+
+.idea/
 .vs/
 *.csproj
+*.unityproj
 *.sln
 *.user
+*.userprefs
+*.pidb
+*.booproj
+
+
+*.log
+*.tmp
+*.cache
+
+*.bak
+
+node_modules/
+dist/
+build/
+
+*.zip
+*.rar
+*.7z
+
+
+# =========================
+# AI / Tooling Folders
+# =========================
+.claude/
+claude/
+.mcp/
+mcp/
