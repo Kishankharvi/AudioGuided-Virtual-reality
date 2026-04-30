@@ -29,6 +29,11 @@
 18. [Class Interaction Map](#18-class-interaction-map)
 19. [Key Constants & Thresholds](#19-key-constants--thresholds)
 20. [Known Limitations](#20-known-limitations)
+21. [Activity Diagram](#21-activity-diagram)
+22. [Class Diagram](#22-class-diagram)
+23. [Data Flow — Level 0 (Context)](#23-data-flow--level-0-context)
+24. [Data Flow — Level 1](#24-data-flow--level-1)
+25. [Data Flow — Level 2 (Exercise Session)](#25-data-flow--level-2-exercise-session)
 
 ---
 
@@ -945,56 +950,67 @@ totalDuration        = sum(exercise[i].duration)          for all 5
 
 ## 16. Architectural Diagram
 
-```
-╔════════════════════════════════════════════════════════════════════╗
-║          AUDIO GUIDED VR — FINGER MOTOR SKILL REHABILITATION       ║
-╠════════════════════════════════════════════════════════════════════╣
-║                                                                     ║
-║  ┌──────────────┐    ┌──────────────┐    ┌────────────────────┐   ║
-║  │  MainMenu    │───▶│  Calibration │───▶│   RehabSession     │   ║
-║  │  Scene       │    │  Scene       │    │   Scene            │   ║
-║  └──────────────┘    └──────────────┘    └────────────────────┘   ║
-║         │                  │                      │                ║
-║  ┌──────▼──────┐    ┌──────▼──────┐    ┌─────────▼──────────┐   ║
-║  │MainMenu     │    │Calibration  │    │  SessionManager    │   ║
-║  │Controller   │    │UI +         │    │  (State Machine)   │   ║
-║  │             │    │HandJoint    │    └─────────┬──────────┘   ║
-║  │PlayerPrefs  │    │Visualizer   │              │               ║
-║  └──────┬──────┘    └─────────────┘    ┌─────────▼──────────┐   ║
-║         │                               │ExerciseCoordinator │   ║
-║  userId │                               └─────────┬──────────┘   ║
-║         ▼                                         │               ║
-║  ┌─────────────────────────────────────────────────▼────────────┐ ║
-║  │                    EXERCISE LAYER                             │ ║
-║  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────┐ ┌──────┐│ ║
-║  │  │GripHold  │ │Precision │ │Finger    │ │Tapping│ │Thumb ││ ║
-║  │  │Exercise  │ │Pinching  │ │Spreading │ │       │ │Oppos.││ ║
-║  │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └───┬───┘ └──┬───┘│ ║
-║  └───────┼────────────┼────────────┼────────────┼─────────┼───┘ ║
-║          │            │            │            │         │      ║
-║  ┌───────▼────────────▼────────────▼────────────▼─────────▼───┐ ║
-║  │                  HAND TRACKING LAYER                        │ ║
-║  │  HandTrackingManager ←→ OVRHand ←→ OVRSkeleton             │ ║
-║  │  FingerLandmarkTracker (21 bones) ←→ HandGrabber            │ ║
-║  │  HandTrackingFixer (SDK workarounds)                        │ ║
-║  └─────────────────────────────┬───────────────────────────────┘ ║
-║                                │                                  ║
-║  ┌─────────────────────────────▼───────────────────────────────┐ ║
-║  │                    FEEDBACK LAYER                            │ ║
-║  │  HUDController ←→ GripPanel, ProgressBar, ConfidenceBadge  │ ║
-║  │  AudioGuideManager ←→ TTSVoiceGuide ←→ OfflineVoiceClips   │ ║
-║  │  ExerciseAudioCues, ProceduralToneGenerator                  │ ║
-║  │  SessionSummaryUI, ThemeManager, VRKeyboard                  │ ║
-║  └─────────────────────────────┬───────────────────────────────┘ ║
-║                                │                                  ║
-║  ┌─────────────────────────────▼───────────────────────────────┐ ║
-║  │                  PERSISTENCE LAYER                           │ ║
-║  │  SessionData ──▶ APIManager ──▶ http://localhost:8000        │ ║
-║  │                       │                                      │ ║
-║  │                       ▼ (on failure)                         │ ║
-║  │              persistentDataPath (offline JSON)               │ ║
-║  └─────────────────────────────────────────────────────────────┘ ║
-╚════════════════════════════════════════════════════════════════════╝
+```mermaid
+graph TD
+    subgraph AL["Application Layer"]
+        A1[MainMenuController]
+        A2[SceneTransitionManager]
+        A3[CalibrationUI]
+        A1 --> A2 --> A3
+    end
+
+    subgraph SL["Session Layer"]
+        S1[SessionManager]
+        S2[ExerciseCoordinator]
+        S3[(SessionData)]
+        S1 -->|controls| S2
+        S2 -->|creates| S3
+    end
+
+    subgraph EL["Exercise Layer"]
+        E1[GripHoldExercise]
+        E2[PrecisionPinchingExercise]
+        E3[FingerSpreadingExercise]
+        E4[FingerTappingExercise]
+        E5[ThumbOppositionExercise]
+    end
+
+    subgraph HTL["Hand Tracking Layer"]
+        H1[HandTrackingManager]
+        H2[OVRHand]
+        H3[OVRSkeleton]
+        H4[FingerLandmarkTracker]
+        H5[HandGrabber]
+        H1 --> H2
+        H1 --> H3
+        H1 --> H4
+        H5 --> H1
+    end
+
+    subgraph FBL["Feedback Layer"]
+        F1[HUDController]
+        F2[AudioGuideManager]
+        F3[TTSVoiceGuide]
+        F4[(OfflineVoiceClips)]
+        F5[SessionSummaryUI]
+        F2 --> F3
+        F3 -->|fallback| F4
+    end
+
+    subgraph PL["Persistence Layer"]
+        P1[APIManager]
+        P2[(FastAPI Server)]
+        P3[(Offline JSON)]
+        P1 -->|HTTP POST| P2
+        P1 -->|on failure| P3
+        P3 -.->|retry on launch| P1
+    end
+
+    AL -->|userId via PlayerPrefs| SL
+    SL -->|sequences exercises| EL
+    EL -->|queries joints| HTL
+    SL -->|triggers events| FBL
+    SL -->|posts session| PL
 ```
 
 ---
@@ -1114,62 +1130,33 @@ totalDuration        = sum(exercise[i].duration)          for all 5
 
 ## 18. Class Interaction Map
 
-```
-                    ┌─────────────────────┐
-                    │   SessionManager    │
-                    │  (state machine)    │
-                    └──────┬──────────────┘
-                           │ StartExercising()
-                           │ CompleteSession()
-                           ▼
-                    ┌──────────────────────┐
-                    │  ExerciseCoordinator │◀── BeginSession(userId)
-                    │                      │──▶ SessionData (creates)
-                    └──┬───────────────────┘
-                       │ RegisterExercise()
-                       │ GetCurrentSessionData()
-          ┌────────────┼────────────────────────┐
-          ▼            ▼                         ▼
-   ┌────────────┐ ┌─────────────┐        ┌──────────────┐
-   │BaseExercise│ │HUDController│        │AudioGuide    │
-   │(5 subclass)│ │             │        │Manager       │
-   └─────┬──────┘ └─────┬───────┘        └──────┬───────┘
-         │               │                       │
-   OnRepCompleted   UpdateHUD(state)     SpeakExerciseIntro
-   OnExercise       GripPanel.Set()      SpeakEncouragement
-   Completed        ProgressBar.Set()    TTSVoiceGuide
-         │
-         ▼
-   ┌──────────────────────────────────────────────────┐
-   │               HandTrackingManager                │
-   │  GetFingerPinchStrength()  GetHandGripStrength() │
-   └──────────┬───────────────────────────────────────┘
-              │ OVRHand / OVRSkeleton
-              ▼
-   ┌──────────────────────────────────────────────────┐
-   │            FingerLandmarkTracker                  │
-   │  GetLandmarks()  ComputeFlexion()  ComputeSpread()│
-   └──────────────────────────────────────────────────┘
-              ▲
-   ┌──────────┴───────────────────────────────────────┐
-   │               HandGrabber                        │
-   │  OnGrabStarted    OnGrabEnded                    │
-   │  Dual detection: pinch + palm                    │
-   └──────────┬───────────────────────────────────────┘
-              │
-              ▼
-   ┌──────────────────────────────────────────────────┐
-   │           ExerciseObjectController               │
-   │  SetGrip()  SetProgress()  PlayAudio()           │
-   │  Deformation  Floating label  Color tint         │
-   └──────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    SM[SessionManager] -->|StartExercising| EC[ExerciseCoordinator]
+    EC -->|BeginSession| SD[(SessionData)]
 
-   ┌──────────────────────────────────────────────────┐
-   │  APIManager                                       │
-   │  PostSession(SessionData) → HTTP POST             │
-   │  SaveSessionOffline() → persistentDataPath        │
-   │  RetryOfflineSessions() → on app start            │
-   └──────────────────────────────────────────────────┘
+    EC -->|RegisterExercise x5| BE[BaseExercise]
+    BE -->|queries pinch + grip| HTM[HandTrackingManager]
+    HTM -->|GetBoneById| FLT[FingerLandmarkTracker]
+    HTM -->|grab detection| HG[HandGrabber]
+    HG -->|OnGrabStarted / OnGrabEnded| EOC[ExerciseObjectController]
+
+    BE -->|OnRepCompleted| EC
+    BE -->|OnExerciseCompleted| EC
+
+    EC -->|UpdateHUD| HC[HUDController]
+    HC --> GP[GripPanel]
+    HC --> PB[ProgressBar]
+    HC --> CB[ConfidenceBadge]
+
+    EC -->|SpeakExerciseIntro| AGM[AudioGuideManager]
+    AGM -->|delegates| TTS[TTSVoiceGuide]
+    TTS -->|fallback| OVC[(OfflineVoiceClips)]
+
+    EC -->|FinalizeSession| SM
+    SM -->|PostSession| API[APIManager]
+    API -->|HTTP POST| SRV[(FastAPI Server)]
+    API -->|on failure| OFS[(Offline JSON)]
 ```
 
 ---
@@ -1219,6 +1206,290 @@ totalDuration        = sum(exercise[i].duration)          for all 5
 | 9 | **ElevenLabs TTS not working** | TTS reflection binding does not match ElevenLabs SDK API. System falls back to pre-recorded offline `AudioClip` assets, which must be manually assigned to `OfflineVoiceClips.asset`. |
 | 10 | **Fixed exercise difficulty floor** | 0.5x minimum means exercises can still be challenging for severe cases |
 | 11 | **OfflineVoiceClips must be populated** | Audio clips for all voice lines must be pre-recorded and assigned in the `OfflineVoiceClips` ScriptableObject at `Assets/Resources/OfflineVoiceClips.asset`. Missing clips result in silent guidance. |
+
+---
+
+## 21. Activity Diagram
+
+The following diagram shows the complete patient workflow from app launch through session completion, including all decision points and audio feedback triggers.
+
+```mermaid
+flowchart TD
+    Start([App Launch]) --> MM[Main Menu Scene Loads]
+    MM --> WA[Play Welcome Audio]
+    WA --> EID[Patient Enters Patient ID via VR Keyboard]
+    EID --> SS{Start Session Pressed?}
+    SS -->|No| EID
+    SS -->|Yes| CAL[Load Calibration Scene]
+    CAL --> HH[Patient Holds Hands in Camera View]
+    HH --> TK{Tracking Stable?}
+    TK -->|No| HH
+    TK -->|Yes| RDY[Patient Presses Ready]
+    RDY --> RS[Load RehabSession Scene]
+    RS --> BOOT[Bootstrap HandGrabbers and SessionManager]
+    BOOT --> BEGIN[Begin Session - Exercise 1: Grip Hold]
+    BEGIN --> EXLOOP{Current Exercise Complete?}
+    EXLOOP -->|No| POSE[Patient Performs Gesture]
+    POSE --> TLOST{Tracking Lost?}
+    TLOST -->|Yes| GRACE[Grace Period Active - Hold Timer Paused]
+    GRACE --> TRES{Tracking Restored within 2s?}
+    TRES -->|Yes| POSE
+    TRES -->|No| WARN[Audio: Keep Hands in View]
+    WARN --> TRES
+    TLOST -->|No| THRESH{Exercise Threshold Met?}
+    THRESH -->|No| POSE
+    THRESH -->|Yes| REP[Register Rep]
+    REP --> ENC[Play Encouragement Audio]
+    ENC --> DIFF[Update Adaptive Difficulty Multiplier]
+    DIFF --> EXLOOP
+    EXLOOP -->|Yes| EXDONE[Audio: Exercise Complete + Accuracy]
+    EXDONE --> LAST{Last of 5 Exercises?}
+    LAST -->|No| NEXT[Load Next Exercise]
+    NEXT --> EXLOOP
+    LAST -->|Yes| FIN[Finalize Session Metrics]
+    FIN --> SUM[Show Session Summary UI]
+    SUM --> POST[APIManager.PostSession]
+    POST --> NET{Server Reachable?}
+    NET -->|Yes| DONE[Session Uploaded]
+    NET -->|No| OFFLINE[Save Offline JSON to Device Storage]
+    OFFLINE --> DONE
+    DONE --> End([Session Complete])
+```
+
+---
+
+## 22. Class Diagram
+
+UML class diagram showing the key classes, their attributes, methods, and relationships.
+
+```mermaid
+classDiagram
+    direction TB
+
+    class BaseExercise {
+        <<abstract>>
+        +int targetReps
+        +float difficultyMultiplier
+        +StartExercise()
+        +StopExercise()
+        +GetExerciseProgress()
+        +RegisterRep(float accuracy)
+        +GetMetrics() ExerciseMetrics
+    }
+
+    class GripHoldExercise {
+        -float holdDuration
+        -float minGripStrength
+    }
+
+    class PrecisionPinchingExercise {
+        -float pinchThreshold
+        -float pinchHoldDuration
+    }
+
+    class FingerSpreadingExercise {
+        -float spreadHoldDuration
+        -float gracePeriod
+    }
+
+    class FingerTappingExercise {
+        -float tapThreshold
+        -float tapCooldown
+    }
+
+    class ThumbOppositionExercise {
+        -float maxSequenceGap
+    }
+
+    class ExerciseCoordinator {
+        -int currentIndex
+        -SessionData sessionData
+        +BeginSession(string userId)
+        +FinalizeSession()
+        +GetCurrentSessionData() SessionData
+    }
+
+    class SessionManager {
+        -SessionState state
+        +StartExercising(string userId)
+        +CompleteSession()
+        +SaveSessionOffline(SessionData data)
+    }
+
+    class HandTrackingManager {
+        +bool IsLeftTracked
+        +bool IsRightTracked
+        +GetFingerPinchStrength() float
+        +GetHandGripStrength() float
+    }
+
+    class FingerLandmarkTracker {
+        +GetLandmarks() array
+        +ComputeFlexion() float
+        +ComputeSpread() float
+    }
+
+    class HandGrabber {
+        +OnGrabStarted
+        +OnGrabEnded
+    }
+
+    class TTSVoiceGuide {
+        -Queue lineQueue
+        +Speak(string text)
+        +SpeakWelcome()
+        +SpeakExerciseIntro()
+        +SpeakEncouragement()
+        +SpeakTrackingLost()
+        +StopAll()
+    }
+
+    class AudioGuideManager {
+        -float encouragementInterval
+        +PlayGuide(AudioPhase phase)
+        +PlayCorrection()
+        +StopAll()
+    }
+
+    class APIManager {
+        -string baseUrl
+        +PostSession(SessionData data)
+        +RetryOfflineSessions()
+    }
+
+    class SessionData {
+        +string sessionId
+        +string userId
+        +float overallAccuracy
+        +float averageGripStrength
+        +float totalDuration
+        +ToJson() string
+    }
+
+    class ExerciseMetrics {
+        +string exerciseName
+        +float accuracy
+        +float gripStrength
+        +int repsCompleted
+        +int targetReps
+        +float duration
+    }
+
+    class HUDController {
+        +UpdateHUD()
+        +ShowTrackingLost()
+        +ShowExerciseComplete()
+    }
+
+    class OfflineVoiceClips {
+        <<ScriptableObject>>
+        +AudioClip welcome
+        +AudioClip trackingLost
+        +AudioClip sessionComplete
+    }
+
+    BaseExercise <|-- GripHoldExercise
+    BaseExercise <|-- PrecisionPinchingExercise
+    BaseExercise <|-- FingerSpreadingExercise
+    BaseExercise <|-- FingerTappingExercise
+    BaseExercise <|-- ThumbOppositionExercise
+
+    ExerciseCoordinator "1" --> "5" BaseExercise : sequences
+    ExerciseCoordinator --> SessionData : creates
+    SessionManager --> ExerciseCoordinator : controls
+    SessionManager --> APIManager : uses
+
+    BaseExercise --> HandTrackingManager : queries
+    HandTrackingManager --> FingerLandmarkTracker : uses
+    HandGrabber --> BaseExercise : notifies
+
+    AudioGuideManager --> TTSVoiceGuide : delegates to
+    TTSVoiceGuide --> OfflineVoiceClips : fallback
+    ExerciseCoordinator --> AudioGuideManager : triggers
+    ExerciseCoordinator --> HUDController : updates
+
+    SessionData "1" *-- "5" ExerciseMetrics : contains
+    APIManager --> SessionData : serializes
+```
+
+---
+
+## 23. Data Flow — Level 0 (Context)
+
+The context diagram shows the entire system as a single process, with its two external entities (Patient and Therapist) and the top-level data flows.
+
+```mermaid
+flowchart LR
+    Pat(["Patient"])
+    Ther(["Therapist"])
+
+    Pat -->|"Hand Movements + Patient ID"| AGVR["AGVRSystem"]
+    AGVR -->|"Audio Guidance + Visual HUD + Session Summary"| Pat
+    AGVR -->|"Session Data via HTTP POST"| Server[(FastAPI Server)]
+    Server -->|"Session Reports + Progress Trends"| Ther
+    Ther -->|"HTTP GET Requests"| Server
+```
+
+---
+
+## 24. Data Flow — Level 1
+
+Level 1 decomposes the system into five major processes, showing how data moves between them, their data stores, and the external entities.
+
+```mermaid
+flowchart TD
+    Pat(["Patient"])
+    Ther(["Therapist"])
+
+    Pat -->|Patient ID| P1["1.0 Patient Authentication"]
+    P1 -->|userId stored| DS1[(PlayerPrefs)]
+    DS1 -->|userId read| P3["3.0 Exercise Session"]
+
+    Pat -->|Hand Movements| P2["2.0 Hand Tracking and Calibration"]
+    P2 -->|Skeleton Data + Tracking Events| P3
+    P2 -->|Visual Skeleton Overlay| Pat
+
+    P3 -->|Exercise Events + Metrics| P4["4.0 Audio and Visual Feedback"]
+    P4 -->|Audio Cues + HUD Updates| Pat
+
+    P3 -->|Session Metrics| P5["5.0 Data Persistence"]
+    P5 -->|Write JSON| DS2[(Device Storage)]
+    P5 -->|HTTP POST| DS3[(FastAPI Server)]
+    DS2 -->|Retry on App Launch| P5
+
+    Ther -->|HTTP GET| DS3
+    DS3 -->|Session Reports + Trends| Ther
+```
+
+---
+
+## 25. Data Flow — Level 2 (Exercise Session)
+
+Level 2 drills down into Process 3.0 (Exercise Session), showing the internal sub-processes that evaluate hand poses, count reps, adapt difficulty, accumulate metrics, and dispatch feedback.
+
+```mermaid
+flowchart TD
+    SK(["Skeleton Data from OVRHand + OVRSkeleton"])
+    GE(["HandGrabber Events"])
+
+    SK --> P31["3.1 Hand Pose Evaluation"]
+    GE --> P31
+
+    P31 -->|Pinch and Grip Strength Values| P32["3.2 Rep Detection and Counting"]
+
+    P32 -->|Rep Accuracy| P33["3.3 Adaptive Difficulty Update"]
+    P33 -->|New Multiplier| DS1[(Difficulty State 0.5x to 2.0x)]
+    DS1 -->|Scaled Thresholds| P31
+
+    P32 -->|Rep Registered| P34["3.4 Metrics Accumulation"]
+    P34 -->|ExerciseMetrics| P35["3.5 Session Aggregation"]
+    P35 -->|SessionData| DS2[(Session Data Store)]
+
+    P32 -->|OnRepCompleted + OnExerciseCompleted| P36["3.6 Feedback Dispatch"]
+    P36 -->|UpdateHUD| HUD(["HUDController"])
+    P36 -->|SpeakEncouragement + SpeakExerciseComplete| AGM(["AudioGuideManager"])
+    P35 -->|FinalizeSession| API(["APIManager"])
+```
 
 ---
 
