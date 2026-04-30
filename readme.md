@@ -1,10 +1,9 @@
-# AGVRSystem — Comprehensive Project Report
+# Audio Guided Virtual Reality for Finger Motor Skill Rehabilitation
 
-**Project:** AGVRSystem (Automated Guided VR Rehabilitation System)  
+**Project:** AGVRSystem  
 **Platform:** Meta Quest (VR Headset)  
 **Engine:** Unity 6 (URP)  
-**Report Date:** 2026-04-17  
-**Author:** Auto-generated via Claude Code analysis
+**Author:** Kishan S
 
 ---
 
@@ -35,7 +34,7 @@
 
 ## 1. Project Overview
 
-**AGVRSystem** is a **VR-based hand rehabilitation application** designed to guide patients through structured hand and finger motor exercises using a Meta Quest headset. The system uses **markerless hand tracking** (no controllers required) to detect hand poses and gestures in real time, evaluate exercise performance, and record clinical metrics for therapist review.
+**Audio Guided Virtual Reality for Finger Motor Skill Rehabilitation** is a VR-based hand rehabilitation application that guides patients through structured hand and finger motor exercises using a Meta Quest headset. The system uses **markerless hand tracking** (no controllers required) to detect hand poses and gestures in real time, evaluate exercise performance, and record clinical metrics for therapist review.
 
 The application targets patients recovering from:
 - Stroke (motor function loss)
@@ -43,7 +42,7 @@ The application targets patients recovering from:
 - Neurological conditions affecting fine motor skills
 - Post-surgical rehabilitation
 
-The patient wears the Meta Quest headset and performs a guided sequence of 5 exercises. The system provides real-time visual feedback via a HUD, audio instructions via text-to-speech, and automatically uploads session data to a clinical server upon completion.
+The patient wears the Meta Quest headset and performs a guided sequence of 5 exercises. The system provides real-time visual feedback via a HUD, audio instructions via voice guidance, and automatically uploads session data to a clinical server upon completion.
 
 ---
 
@@ -57,7 +56,7 @@ The patient wears the Meta Quest headset and performs a guided sequence of 5 exe
 | 3 | Evaluate exercise accuracy and performance | Per-exercise metrics: accuracy, grip strength, reps |
 | 4 | Adapt difficulty to patient capability | Adaptive multiplier system (0.5x – 2.0x) |
 | 5 | Record and transmit clinical session data | REST API upload + offline fallback storage |
-| 6 | Provide audio-first accessibility | Azure/Google TTS with offline clip fallback |
+| 6 | Provide audio-first accessibility | Voice guidance with offline pre-recorded clip fallback |
 
 ### Secondary Objectives
 - Enable therapist oversight through server-side data review
@@ -76,7 +75,7 @@ The patient wears the Meta Quest headset and performs a guided sequence of 5 exe
 - **Hand Tracking:** Markerless, controller-free, bilateral
 - **Metrics Collection:** Per-exercise and per-session performance data
 - **Data Transmission:** HTTP REST API (local server at `localhost:8000`)
-- **Audio Guidance:** Text-to-speech (TTS) narration with procedural sound effects
+- **Audio Guidance:** Voice narration with procedural sound effects; offline pre-recorded clip fallback when TTS is unavailable
 - **UI System:** World-space HUD, VR keyboard input, theme switching (dark/light)
 - **Adaptive Difficulty:** Auto-scales based on last 3 rep accuracy
 
@@ -107,8 +106,9 @@ The patient wears the Meta Quest headset and performs a guided sequence of 5 exe
 | **Gamification** | Points, achievement badges, progress streaks to increase engagement |
 | **Telerehabilitation** | Remote therapist can observe live session via streamed hand pose data |
 | **Custom Protocols** | Therapists can prescribe specific exercise sets, durations, and difficulty floors |
-| **Multi-Language TTS** | Support non-English patients via multilingual TTS selection |
+| **Multi-Language Audio** | Support non-English patients via multilingual TTS or localized pre-recorded clips |
 | **Eye Tracking** | Use Quest Pro eye tracking to detect focus/fatigue |
+| **ElevenLabs TTS Integration** | Full integration of ElevenLabs TTS for natural-sounding voice guidance |
 
 ### Long-Term Vision
 | Feature | Description |
@@ -135,7 +135,8 @@ The patient wears the Meta Quest headset and performs a guided sequence of 5 exe
 | XR Runtime | OpenXR | 1.16.1 |
 | Input System | Unity New Input System | 1.19.0 |
 | Audio | Unity AudioSource + Procedural Tones | Built-in |
-| TTS | Azure Cognitive Services / Google TTS | Cloud APIs |
+| TTS (intended) | ElevenLabs TTS | Cloud API (not fully integrated) |
+| TTS (fallback) | Pre-recorded offline AudioClips | Local device storage |
 | Networking | UnityWebRequest (REST) | Built-in |
 | Serialization | Unity JsonUtility | Built-in |
 
@@ -147,12 +148,13 @@ The patient wears the Meta Quest headset and performs a guided sequence of 5 exe
 | Sketchfab For Unity | 3D asset import |
 | MCP Server (ivanmurzak) | Claude Code integration for development |
 
-### Backend (External, not in this repo)
+### Backend
 | Component | Technology |
 |-----------|-----------|
-| API Server | `http://localhost:8000` — REST endpoint |
+| API Server | FastAPI (Python) — `http://localhost:8000` |
 | Data Format | JSON (SessionData schema) |
 | Offline Storage | `Application.persistentDataPath` (device filesystem) |
+| Dashboard | Single-page HTML frontend served by FastAPI |
 
 ---
 
@@ -681,12 +683,14 @@ OVRHand.IsTracked == false:
 
 ### Architecture
 
+The audio system is designed to be fully functional without internet connectivity. Voice guidance is delivered through a priority queue system using pre-recorded offline clips. A TTS agent integration point exists for future live speech synthesis.
+
 ```
 AudioGuideManager (orchestrator)
-    ├── TTSVoiceGuide (TTS requests)
-    │       ├── Azure Cognitive Services (primary)
-    │       ├── Google Text-to-Speech (secondary)
-    │       └── OfflineVoiceClips (local fallback)
+    ├── TTSVoiceGuide (voice guidance)
+    │       ├── TTS Agent (reflection-based, requires compatible agent in scene)
+    │       │       └── ElevenLabs TTS (intended — not fully integrated)
+    │       └── OfflineVoiceClips (pre-recorded AudioClip fallback — primary path)
     ├── ExerciseAudioCues (exercise event audio)
     └── UIAudioFeedback (UI interactions)
 
@@ -698,6 +702,16 @@ ProceduralToneGenerator (runtime audio synthesis)
 SpatialAudioController
     └── Positions AudioSources in 3D relative to hands
 ```
+
+### TTS Integration Status
+
+The `TTSVoiceGuide` component uses **C# reflection** at runtime to find a TTS agent component in the scene, searching for types containing "TextToSpeech", "TTSAgent", or "SpeechSynthesis" in their name. It then calls `SpeakText()` or `Speak()` methods via reflection.
+
+**ElevenLabs TTS** was intended as the cloud voice provider, but the integration is not currently working. The reflection-based approach requires the ElevenLabs component to expose specific method names that may differ from the current reflection lookup. Until the TTS agent is properly bound, the system automatically falls back to:
+
+- **OfflineVoiceClips** — a `ScriptableObject` containing pre-recorded `AudioClip` assets for all voice lines (welcome, calibration, exercise intros, encouragement, session complete, tracking lost, etc.)
+
+The `AudioSystemBootstrapper` loads `OfflineVoiceClips.asset` from `Assets/Resources/` before any scene loads, ensuring audio guidance is always available regardless of network state or TTS status.
 
 ### TTS Priority Queue
 
@@ -786,6 +800,22 @@ Both paths → MainMenuController.SetUserId(string)
 
 ## 13. Networking & Persistence
 
+### Backend
+
+The backend is a **FastAPI** (Python) server that:
+- Receives session data from the Unity VR app via HTTP POST
+- Stores sessions as JSON files on disk
+- Exposes REST endpoints for the web dashboard
+- Serves a single-page HTML dashboard frontend
+
+**Run the server:**
+```bash
+cd server
+pip install -r requirements.txt
+python main.py
+```
+Server starts at `http://localhost:8000`.
+
 ### REST API Schema
 
 **Endpoint:** `POST http://localhost:8000/api/session`
@@ -794,7 +824,7 @@ Both paths → MainMenuController.SetUserId(string)
 ```json
 {
   "sessionId": "550e8400-e29b-41d4-a716-446655440000",
-  "userId": "Patient123",
+  "patientId": "Patient123",
   "startTimestamp": "2026-04-17T10:30:00.0000000Z",
   "endTimestamp": "2026-04-17T10:35:45.0000000Z",
   "overallAccuracy": 87.5,
@@ -811,13 +841,22 @@ Both paths → MainMenuController.SetUserId(string)
       "startTimestamp": "2026-04-17T10:30:00Z",
       "endTimestamp": "2026-04-17T10:31:07Z"
     },
-    { "exerciseName": "PrecisionPinchingExercise", ... },
-    { "exerciseName": "FingerSpreadingExercise", ... },
-    { "exerciseName": "FingerTappingExercise", ... },
-    { "exerciseName": "ThumbOppositionExercise", ... }
+    { "exerciseName": "PrecisionPinchingExercise", "...": "..." },
+    { "exerciseName": "FingerSpreadingExercise",   "...": "..." },
+    { "exerciseName": "FingerTappingExercise",     "...": "..." },
+    { "exerciseName": "ThumbOppositionExercise",   "...": "..." }
   ]
 }
 ```
+
+**Other Endpoints:**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/sessions` | List all session summaries |
+| GET | `/api/session/{id}` | Get full session data by ID |
+| GET | `/api/improvement` | Accuracy/grip trend data for charts |
+| GET | `/api/stats` | Aggregate statistics across all sessions |
+| GET | `/` | Serve the HTML dashboard frontend |
 
 ### Offline Sync Strategy
 
@@ -829,11 +868,11 @@ During Session:
 
 On APIManager.PostSession() failure:
     → SaveSessionOffline(sessionData)
-    → Marks file with "pending_upload" prefix
+    → Marks file with "offline_" prefix
 
 On App Start (RehabSessionStarter):
     → APIManager.RetryOfflineSessions()
-    → Scans persistentDataPath for "pending_upload_*.json"
+    → Scans persistentDataPath for "offline_*.json"
     → Re-attempts HTTP POST for each
     → On success: delete local file
     → On failure: leave for next startup
@@ -908,7 +947,7 @@ totalDuration        = sum(exercise[i].duration)          for all 5
 
 ```
 ╔════════════════════════════════════════════════════════════════════╗
-║                      AGVR SYSTEM ARCHITECTURE                      ║
+║          AUDIO GUIDED VR — FINGER MOTOR SKILL REHABILITATION       ║
 ╠════════════════════════════════════════════════════════════════════╣
 ║                                                                     ║
 ║  ┌──────────────┐    ┌──────────────┐    ┌────────────────────┐   ║
@@ -943,7 +982,7 @@ totalDuration        = sum(exercise[i].duration)          for all 5
 ║  ┌─────────────────────────────▼───────────────────────────────┐ ║
 ║  │                    FEEDBACK LAYER                            │ ║
 ║  │  HUDController ←→ GripPanel, ProgressBar, ConfidenceBadge  │ ║
-║  │  AudioGuideManager ←→ TTSVoiceGuide ←→ Azure/Google TTS    │ ║
+║  │  AudioGuideManager ←→ TTSVoiceGuide ←→ OfflineVoiceClips   │ ║
 ║  │  ExerciseAudioCues, ProceduralToneGenerator                  │ ║
 ║  │  SessionSummaryUI, ThemeManager, VRKeyboard                  │ ║
 ║  └─────────────────────────────┬───────────────────────────────┘ ║
@@ -1016,7 +1055,7 @@ totalDuration        = sum(exercise[i].duration)          for all 5
 2. SessionSummaryUI appears with per-exercise breakdown
 3. ReportBoard displays in VR space with results
 4. APIManager sends POST to `http://localhost:8000/api/session`
-5. Server returns 200 OK
+5. Server returns 201 Created
 6. Session marked complete
 
 **Alternate Flow (Network Unavailable):**
@@ -1032,7 +1071,7 @@ totalDuration        = sum(exercise[i].duration)          for all 5
 **Actor:** Clinical Therapist  
 **Precondition:** Session data uploaded to server  
 **Main Flow:**
-1. Therapist opens web dashboard (external system)
+1. Therapist opens web dashboard at `http://localhost:8000`
 2. Therapist searches by Patient ID
 3. Server returns historical session list
 4. Therapist selects session to view details
@@ -1158,7 +1197,7 @@ totalDuration        = sum(exercise[i].duration)          for all 5
 | `MaxGrabDistance` | 0.15m | HandGrabber | Force-release if hand moves away |
 | `FollowTightness` | 0.85 | HandGrabber | Object-to-hand smoothing factor |
 | `AutosaveInterval` | 30s | SessionManager | Session data autosave frequency |
-| `EncouragementInterval` | 30s | AudioGuideManager | Minimum time between TTS encouragements |
+| `EncouragementInterval` | 30s | AudioGuideManager | Minimum time between voice encouragements |
 | `DifficultyMin` | 0.5 | BaseExercise | Easiest difficulty multiplier |
 | `DifficultyMax` | 2.0 | BaseExercise | Hardest difficulty multiplier |
 | `DifficultyStep` | 0.1 | BaseExercise | Multiplier adjustment per evaluation |
@@ -1177,25 +1216,23 @@ totalDuration        = sum(exercise[i].duration)          for all 5
 | 6 | **No hand mesh morphing** | Objects don't physically deform around hand geometry |
 | 7 | **No leaderboard** | Performance data sent to server but no in-app ranking or comparison |
 | 8 | **Scene-scoped singletons** | HandTrackingManager re-initializes per scene (not DontDestroyOnLoad) |
-| 9 | **TTS requires internet** | TTS needs network; offline clips must be pre-generated |
+| 9 | **ElevenLabs TTS not working** | TTS reflection binding does not match ElevenLabs SDK API. System falls back to pre-recorded offline `AudioClip` assets, which must be manually assigned to `OfflineVoiceClips.asset`. |
 | 10 | **Fixed exercise difficulty floor** | 0.5x minimum means exercises can still be challenging for severe cases |
+| 11 | **OfflineVoiceClips must be populated** | Audio clips for all voice lines must be pre-recorded and assigned in the `OfflineVoiceClips` ScriptableObject at `Assets/Resources/OfflineVoiceClips.asset`. Missing clips result in silent guidance. |
 
 ---
 
 ## Summary
 
-**AGVRSystem** is a clinically-oriented VR rehabilitation application with:
+**Audio Guided Virtual Reality for Finger Motor Skill Rehabilitation** is a clinically-oriented VR rehabilitation application with:
 
 - **5 physiotherapy exercises** targeting hand grip, pinch, spread, tapping, and thumb coordination
-- **Markerless hand tracking** using Meta XR SDK with bilateral support
-- **Audio-first UX** with TTS narration, procedural sound effects, and spatial audio
+- **Markerless hand tracking** using Meta XR SDK v83 with bilateral support
+- **Audio-first UX** using pre-recorded voice clips (offline), procedural sound effects, and spatial audio. ElevenLabs TTS integration is intended but not yet functional; audio runs fully offline via `OfflineVoiceClips`
 - **Adaptive difficulty** that auto-scales based on patient performance
-- **Comprehensive metrics** collection with REST upload and offline fallback
+- **Comprehensive metrics** collection with FastAPI REST upload and offline fallback
 - **Event-driven architecture** with clean separation: tracking → exercises → HUD → audio → persistence
 - **World-space HUD** providing real-time grip meters, rep counters, hold timers, and tracking status
+- **FastAPI backend** with session storage, improvement trend API, and a web dashboard frontend
 
 The system is architected for clinical deployment with enterprise-level error handling (tracking loss grace periods, offline sync, scene-transition resilience) and is well-positioned for expansion into a full telerehabilitation platform.
-
----
-
-
